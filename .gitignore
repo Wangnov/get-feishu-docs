@@ -1,0 +1,21 @@
+.DS_Store
+
+# Local development notes
+docs/dev/
+output/
+output-compare/
+
+# Common build outputs
+dist/
+build/
+out/
+target/
+bin/
+
+# Common package manager artifacts
+node_modules/
+.pnpm-store/
+
+# Local env files
+.env
+.env.*
