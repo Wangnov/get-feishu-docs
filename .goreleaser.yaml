@@ -54,5 +54,24 @@ release:
   draft: false
   prerelease: auto
 
+brews:
+  - name: get-feishu-docs
+    repository:
+      owner: Wangnov
+      name: homebrew-tap
+      branch: main
+      token: "{{ .Env.GH_PAT }}"
+    directory: Formula
+    homepage: "https://github.com/Wangnov/get-feishu-docs"
+    description: "CLI for exporting Feishu documents into stable local deliverables."
+    license: "MIT"
+    commit_author:
+      name: Wangnov
+      email: 48670012+Wangnov@users.noreply.github.com
+    test: |
+      system "#{bin}/get-feishu-docs", "--version"
+    install: |
+      bin.install "get-feishu-docs"
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

@@ -121,6 +121,8 @@ func TestBuildCodeFragment(t *testing.T) {
 		`restored-code-block`,
 		`restored-code-header`,
 		`restored-code-caption`,
+		`restored-code-copy`,
+		`data-copy-code`,
 		`TypeScript`,
 		`language-typescript`,
 		`token-keyword`,
@@ -283,6 +285,9 @@ func TestRenderPageTemplateIncludesImageLightbox(t *testing.T) {
 		`class="image-lightbox-image"`,
 		`document.addEventListener("click"`,
 		`const openLightbox = (img) =>`,
+		`data-copy-code`,
+		`navigator.clipboard`,
+		`已复制`,
 		`.doc-page img { cursor: zoom-in; }`,
 	} {
 		if !strings.Contains(got, check) {

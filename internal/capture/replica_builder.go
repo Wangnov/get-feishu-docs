@@ -1045,18 +1045,19 @@ func buildCodeFragment(html, expectedID string) (string, error) {
 		classAttr += " language-" + sanitizeCodeLanguage(language)
 	}
 
-	headerHTML := ""
-	if caption != "" || language != "" {
-		captionHTML := ""
-		languageHTML := ""
-		if caption != "" {
-			captionHTML = fmt.Sprintf(`<span class="restored-code-caption">%s</span>`, escapeHTML(caption))
-		}
-		if language != "" {
-			languageHTML = fmt.Sprintf(`<span class="restored-code-language">%s</span>`, escapeHTML(language))
-		}
-		headerHTML = fmt.Sprintf(`<div class="restored-code-header"><div class="restored-code-header-main">%s</div>%s</div>`, captionHTML, languageHTML)
+	captionHTML := ""
+	if caption != "" {
+		captionHTML = fmt.Sprintf(`<span class="restored-code-caption">%s</span>`, escapeHTML(caption))
 	}
+	languageHTML := ""
+	if language != "" {
+		languageHTML = fmt.Sprintf(`<span class="restored-code-language">%s</span>`, escapeHTML(language))
+	}
+	headerHTML := fmt.Sprintf(
+		`<div class="restored-code-header"><div class="restored-code-header-main">%s</div><div class="restored-code-actions">%s<button class="restored-code-copy" type="button" data-copy-code>复制</button></div></div>`,
+		captionHTML,
+		languageHTML,
+	)
 
 	return strings.TrimSpace(fmt.Sprintf(`
 <div class="block restored-code-block" data-block-id="%s" data-block-type="code">
@@ -1613,8 +1614,13 @@ func renderPageTemplate(title, bodyHTML string) string {
 	      .restored-code-block { margin: 18px 0; border: 1px solid #d8deea; border-radius: 14px; overflow: hidden; background: linear-gradient(180deg, #f8fbff 0%%, #f2f6fc 100%%); box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06); }
 	      .restored-code-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: rgba(225, 234, 255, 0.7); border-bottom: 1px solid #d8deea; }
 	      .restored-code-header-main { min-width: 0; }
+	      .restored-code-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 	      .restored-code-caption { display: inline-block; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #546072; }
 	      .restored-code-language { flex: 0 0 auto; padding: 3px 10px; border-radius: 999px; background: rgba(84, 96, 114, 0.12); color: #334155; font-size: 12px; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase; }
+	      .restored-code-copy { flex: 0 0 auto; border: 0; border-radius: 999px; padding: 5px 12px; background: #336df4; color: #ffffff; font-size: 12px; font-weight: 600; line-height: 1.2; cursor: pointer; transition: background 0.18s ease, transform 0.18s ease; }
+	      .restored-code-copy:hover { background: #245bdb; }
+	      .restored-code-copy:active { transform: translateY(1px); }
+	      .restored-code-copy[data-copy-state="done"] { background: #1f8f55; }
 	      .restored-code-pre { margin: 0; padding: 16px 18px; overflow-x: auto; background: #0f1724; color: #e8eefc; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 13px; line-height: 1.65; }
 	      .restored-code-pre code,
 	      .restored-code-pre .restored-code-content { display: block; padding: 0; border-radius: 0; background: transparent; color: inherit; font-family: inherit; font-size: inherit; white-space: pre; }
@@ -1749,6 +1755,7 @@ func renderPageTemplate(title, bodyHTML string) string {
         const closeButton = lightbox.querySelector(".image-lightbox-close");
         const backdrop = lightbox.querySelector(".image-lightbox-backdrop");
         let lastActiveImage = null;
+        const copyButtonResetTimers = new WeakMap();
 
         const getCaption = (img) => {
           const figure = img.closest("figure");
@@ -1756,6 +1763,38 @@ func renderPageTemplate(title, bodyHTML string) string {
           const figcaptionText = figcaption ? figcaption.textContent.trim() : "";
           const altText = (img.getAttribute("alt") || "").trim();
           return figcaptionText || altText;
+        };
+
+        const writeClipboardText = async (value) => {
+          if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+            await navigator.clipboard.writeText(value);
+            return;
+          }
+          const textarea = document.createElement("textarea");
+          textarea.value = value;
+          textarea.setAttribute("readonly", "");
+          textarea.style.position = "fixed";
+          textarea.style.opacity = "0";
+          textarea.style.pointerEvents = "none";
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand("copy");
+          textarea.remove();
+        };
+
+        const updateCopyButton = (button, state) => {
+          const labels = { idle: "复制", done: "已复制", error: "复制失败" };
+          button.dataset.copyState = state;
+          button.textContent = labels[state] || labels.idle;
+          const lastTimer = copyButtonResetTimers.get(button);
+          if (lastTimer) window.clearTimeout(lastTimer);
+          if (state === "idle") return;
+          const nextTimer = window.setTimeout(() => {
+            button.dataset.copyState = "idle";
+            button.textContent = labels.idle;
+            copyButtonResetTimers.delete(button);
+          }, 1800);
+          copyButtonResetTimers.set(button, nextTimer);
         };
 
         const closeLightbox = () => {
@@ -1793,6 +1832,22 @@ func renderPageTemplate(title, bodyHTML string) string {
 
         document.addEventListener("click", (event) => {
           const target = event.target;
+          if (target instanceof HTMLButtonElement && target.hasAttribute("data-copy-code")) {
+            event.preventDefault();
+            const block = target.closest(".restored-code-block");
+            const code = block ? block.querySelector(".restored-code-pre code") : null;
+            const codeText = code ? (code.textContent || "").replace(/\u200b/g, "") : "";
+            if (!codeText.trim()) {
+              updateCopyButton(target, "error");
+              return;
+            }
+            writeClipboardText(codeText).then(() => {
+              updateCopyButton(target, "done");
+            }).catch(() => {
+              updateCopyButton(target, "error");
+            });
+            return;
+          }
           if (!(target instanceof HTMLImageElement)) return;
           if (target.closest(".image-lightbox")) return;
           if (!target.currentSrc && !target.getAttribute("src")) return;

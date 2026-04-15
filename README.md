@@ -19,10 +19,22 @@ It launches Chrome or Chromium, opens the document, handles password entry, expa
 
 Download the archive for your platform from the GitHub Releases page, extract it, and run `get-feishu-docs`.
 
+### Homebrew
+
+```bash
+brew install Wangnov/tap/get-feishu-docs
+```
+
 ### Build from source
 
 ```bash
 go build ./cmd/get-feishu-docs
+```
+
+### Install with Go
+
+```bash
+go install github.com/wangnov/get-feishu-docs/cmd/get-feishu-docs@latest
 ```
 
 ## Usage
