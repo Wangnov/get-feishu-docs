@@ -73,5 +73,40 @@ brews:
     install: |
       bin.install "get-feishu-docs"
 
+winget:
+  - name: get-feishu-docs
+    publisher: Wangnov
+    package_identifier: Wangnov.GetFeishuDocs
+    package_name: get-feishu-docs
+    short_description: "CLI for exporting Feishu documents into stable local deliverables."
+    description: "Export Feishu documents into local HTML, PNG, PDF, Markdown, assets, and manifest outputs."
+    license: "MIT"
+    homepage: "https://github.com/Wangnov/get-feishu-docs"
+    publisher_url: "https://github.com/Wangnov"
+    publisher_support_url: "https://github.com/Wangnov/get-feishu-docs/issues"
+    license_url: "https://github.com/Wangnov/get-feishu-docs/blob/main/LICENSE"
+    tags:
+      - cli
+      - feishu
+      - docs
+      - export
+      - golang
+    release_notes: "{{ .Changelog }}"
+    repository:
+      owner: Wangnov
+      name: winget-pkgs
+      branch: "get-feishu-docs-{{ .Version }}"
+      token: "{{ .Env.GH_PAT }}"
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+    commit_author:
+      name: Wangnov
+      email: 48670012+Wangnov@users.noreply.github.com
+
 snapshot:
   version_template: "{{ incpatch .Version }}-next"

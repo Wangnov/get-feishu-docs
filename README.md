@@ -25,6 +25,12 @@ Download the archive for your platform from the GitHub Releases page, extract it
 brew install Wangnov/tap/get-feishu-docs
 ```
 
+### Winget
+
+```powershell
+winget install Wangnov.GetFeishuDocs
+```
+
 ### Build from source
 
 ```bash
